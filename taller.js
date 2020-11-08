@@ -63,35 +63,45 @@ function ejercicio3() {
 			return this.transiciones[cabeza].acepta(cola);
 		}
 	}
-	q1.acepta = new Estado(q1.esFinal, q1.transiciones).acepta;
-	q2.acepta = new Estado(q2.esFinal, q2.transiciones).acepta;
-	q3.acepta = new Estado(q3.esFinal, q3.transiciones).acepta;
+	q1.acepta = new Estado(null, null).acepta;
+	q2.acepta = new Estado(null, null).acepta;
+	q3.acepta = new Estado(null, null).acepta;
 }
 
 // Ejercicio 4
 function ejercicio4() {
+	console.log("FUNCION CREADORA DE TODA LA VIDA:")
+	console.log(Estado.prototype.nuevaTransicion)
+
 	Estado.prototype.nuevaTransicion = function (etiqueta, destino) {
 		this.transiciones = Object.assign({}, this.transiciones)
 		this.transiciones[etiqueta] = destino;
 	};
 
+	console.log("NUEVA FUNCION CREADORA DE TODA LA VIDA:")
+	console.log(Estado.prototype.nuevaTransicion)
+
+	// Hasta este punto, q1, q2, y q3 no estan ligados al constructor Estado. Por lo tanto, no iran
+	// al prototipo de Estado a buscar nuevaTrancision. Por eso es necesario pisarlos haciendo
+	// new Estado.
+
 	q1 = new Estado(q1.esFinal, q1.transiciones);
 	q2 = new Estado(q2.esFinal, q2.transiciones);
 	q3 = new Estado(q3.esFinal, q3.transiciones);
-
 }
 
-const acepta = (estado) => estado.acepta
+
 // Ejercicio 5
 function ejercicio5() {
 	algunoAcepta = function (s, qs) {
-		console.log(qs)
+
 		/*for (let i = 0; i < qs.length; i++){
 			if (qs[i].acepta(s)){
 				return true
 			}
 		}
 		return false*/
+
 		//Siguiendo el consejo
 		if (Array.isArray(qs)) {
 			return qs.some((estado) => estado.acepta(s));
@@ -100,9 +110,54 @@ function ejercicio5() {
 	};
 }
 
+
 // Ejercicio 6
 function ejercicio6() {
-  // Completar
+
+	Estado.prototype.nuevaTransicionND = function(etiqueta, destino) {
+
+		//this.acepta =  Object.assign({}, this.acepta)
+		this.transiciones = Object.assign({}, this.transiciones)
+		//this.esFinal = this.esFinal
+		//this.acepta = this.acepta
+
+
+		// Si la transicion no existe, hacemos lo mismo que el ej 4
+		if (this.transiciones[etiqueta] === undefined){
+			//console.log("ENTRO A NUEVA TRANSICION DETERMINISTICA")
+			this.nuevaTransicion(etiqueta, destino)
+			//console.log("SALGO A NUEVA TRANSICION DETERMINISTICA")
+
+		}
+		// Si tenia la transicion, pero con otro desitno, le agrego un destino
+		else if (	this.transiciones[etiqueta] !== destino
+					&& !Array.isArray(this.transiciones[etiqueta])
+				){
+					this.transiciones[etiqueta] = [this.transiciones[etiqueta], destino];
+					this.acepta = function (s) {
+						if (s.length === 0) {return this.esFinal;}
+						let cabeza = s.head();
+						let cola = s.tail();
+						return algunoAcepta(cola, this.transiciones[cabeza]);
+					}
+				}
+
+		// Si tenia la transicion, pero con un array de desitnos tq no contienen a destino, le agrego un destino al array
+		else if (
+				Array.isArray(this.transiciones[etiqueta]) &&
+				!this.transiciones[etiqueta].includes(destino)
+				) {
+					this.transiciones[etiqueta] = this.transiciones[etiqueta].push(destino);
+				}
+	}
+
+	// No es necesario pisarlos como hicimos en el ejercicio 4, pues q1, q2 y q3 ya estan ligados al construcotr
+	// Estado. Por ende, iran a buscar nuevaTransicionND al prototipo de Estado
+	//q1 = new Estado(q1.esFinal, q1.transiciones);
+	//q2 = new Estado(q2.esFinal, q2.transiciones);
+	//q3 = new Estado(q3.esFinal, q3.transiciones);
+
+
 
 }
 
@@ -216,6 +271,7 @@ function testEjercicio3(res) {
 
 // Test Ejercicio 4
 function testEjercicio4(res) {
+
 	let q1_responde_nuevaTransicion = "nuevaTransicion" in q1;
 	let q2_responde_nuevaTransicion = "nuevaTransicion" in q2;
 	let q3_responde_nuevaTransicion = "nuevaTransicion" in q3;
@@ -269,7 +325,10 @@ function testEjercicio4(res) {
 	let qnuevo_acepta_ez = qnuevo.acepta("ez");
 	res.write("q5" + si_o_no(q5_acepta_ez) + "acepta la palabra \"ez\"", q5_acepta_ez);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_ez) + "acepta la palabra \"ez\"", !qnuevo_acepta_ez);
+
+
 }
+
 
 // Test Ejercicio 5
 function testEjercicio5(res) {
@@ -288,6 +347,7 @@ function testEjercicio6(res) {
 
 	qnuevo = new Estado(true, {});
 	qnuevo.nuevaTransicionND("z", q1);
+
 
 	let qnuevo_acepta_zb = qnuevo.acepta("zb");
 
@@ -314,8 +374,8 @@ function testEjercicio6(res) {
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_zb_todavia) + "acepta la palabra \"zb\"", qnuevo_acepta_zb_todavia);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_xc_ahora) + "acepta la palabra \"xc\"", qnuevo_acepta_xc_ahora);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_y) + "acepta la palabra \"y\"", qnuevo_acepta_y);
-    
-    res.write("\nAgrego una transición de qnuevo hacia qnuevo mediante \"x\"\n");
+
+	res.write("\nAgrego una transición de qnuevo hacia qnuevo mediante \"x\"\n");
 
 	qnuevo.nuevaTransicionND("x", qnuevo);
 
@@ -324,33 +384,37 @@ function testEjercicio6(res) {
 
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_xc) + "acepta la palabra \"xc\"", qnuevo_acepta_xc);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_xx) + "acepta la palabra \"xx\"", qnuevo_acepta_xx);
-    
-    res.write("\nCreo el estado q6, a partir de qnuevo, y le agrego una transición hacia q2 mediante \"g\"\n");
+
+	res.write("\nCreo el estado q6, a partir de qnuevo, y le agrego una transición hacia q2 mediante \"g\"\n");
 
 	let q6 = Object.create(qnuevo);
 	q6.nuevaTransicionND("g", q2);
 	let q6_acepta_gc = q6.acepta("gc");
 	let qnuevo_acepta_gc = qnuevo.acepta("gc");
-    
+
+
 	res.write("q6" + si_o_no(q6_acepta_gc) + "acepta la palabra \"gc\"", q6_acepta_gc);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_gc) + "acepta la palabra \"gc\"", !qnuevo_acepta_gc);
-    
+
 	res.write("\nAgrego una transición de q6 hacia q1 mediante \"x\"\n");
-    
+
 	q6.nuevaTransicionND("x", q1);
 	let q6_acepta_xab = q6.acepta("xab");
 	let qnuevo_acepta_xab = qnuevo.acepta("xab");
-    q6_acepta_xc = q6.acepta("xc");
-    qnuevo_acepta_xc = qnuevo.acepta("xc");
+	q6_acepta_xc = q6.acepta("xc");
+	qnuevo_acepta_xc = qnuevo.acepta("xc");
 
 	res.write("q6" + si_o_no(q6_acepta_xc) + "acepta la palabra \"xc\"", q6_acepta_xc);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_xc) + "acepta la palabra \"xc\"", qnuevo_acepta_xc);
 	res.write("q6" + si_o_no(q6_acepta_xab) + "acepta la palabra \"xab\"", q6_acepta_xab);
 	res.write("qnuevo" + si_o_no(qnuevo_acepta_xab) + "acepta la palabra \"xab\"", !qnuevo_acepta_xab);
+
 }
+
 
 // Test Ejercicio 7
 function testEjercicio7(res) {
+	/*
   let q1_deterministico = esDeterministico(q1);
   let q2_deterministico = esDeterministico(q2);
   let q3_deterministico = esDeterministico(q3);
@@ -368,6 +432,9 @@ function testEjercicio7(res) {
   let qnuevo_deterministico = esDeterministico(qnuevo);
 
   res.write("qnuevo" + si_o_no(qnuevo_deterministico) + "es determinístico", !qnuevo_deterministico);
+
+	 */
+
 }
 
 // Función auxiliar que crea un test genérico a partir de un número i y una función f
@@ -394,4 +461,6 @@ function crearTest(i, f) {
     }
     return res.text;
   }
+
+
 }
